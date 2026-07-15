@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tur Virtual — Situs Warisan</title>
+<link rel="stylesheet" href="assets/pannellum/pannellum.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C1712;
+    --panel:#28221B;
+    --panel-2:#332B22;
+    --limestone:#EDE6D6;
+    --limestone-dim:#B9AF9C;
+    --brass:#B98A46;
+    --brass-light:#D9B67A;
+    --moss:#586B4D;
+    --line:rgba(237,230,214,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--ink);font-family:'Work Sans',sans-serif;color:var(--limestone);overflow:hidden;}
+
+  #app-shell{position:absolute; inset:0; background:var(--ink);}
+  #app-shell:fullscreen{width:100vw; height:100vh;}
+
+  #panorama{position:absolute;inset:0;}
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:absolute; top:0; left:0; right:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px;
+    background:linear-gradient(to bottom, rgba(20,17,12,0.75), rgba(20,17,12,0));
+    pointer-events:none;
+  }
+  .brandmark{display:flex; align-items:center; gap:14px; pointer-events:auto;}
+  .brandmark svg{flex-shrink:0;}
+  .brand-text h1{
+    font-family:'Fraunces',serif; font-weight:600; font-size:20px; letter-spacing:0.3px;
+    margin:0; color:var(--limestone);
+  }
+  .brand-text p{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    margin:2px 0 0; color:var(--brass-light);
+  }
+  .scene-tag{
+    pointer-events:auto;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--limestone-dim); border:1px solid var(--line); border-radius:2px;
+    padding:8px 14px; background:rgba(28,23,18,0.55); backdrop-filter:blur(6px);
+  }
+  .scene-tag b{color:var(--brass-light); font-weight:500;}
+
+  /* ---- prasasti (route panel) ---- */
+  .prasasti{
+    position:absolute; left:28px; top:calc(100% - 28px); z-index:20;
+    transform:translateY(-100%);
+    width:260px;
+    background:rgba(28,23,18,0.72);
+    border:1px solid var(--line);
+    backdrop-filter:blur(8px);
+    border-radius:2px;
+    padding:16px 16px 8px;
+  }
+  .prasasti.dragging{transform:none; transition:none; box-shadow:0 8px 24px rgba(0,0,0,0.4); z-index:40;}
+  .prasasti::before{
+    content:""; position:absolute; top:6px; left:6px; right:6px; bottom:6px;
+    border:1px solid rgba(185,138,70,0.35); pointer-events:none; border-radius:1px;
+  }
+  .prasasti-label{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--brass-light); margin:0 0 10px;
+    cursor:grab; user-select:none;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .prasasti-label:active{cursor:grabbing;}
+  .drag-dots{display:flex; gap:3px; opacity:0.6;}
+  .drag-dots span{width:3px; height:3px; border-radius:50%; background:var(--brass-light); display:block;}
+  .route-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 4px; margin-bottom:2px; cursor:pointer;
+    border-bottom:1px solid transparent;
+    background:none; border-left:none; border-right:none; border-top:none;
+    width:100%; text-align:left; color:inherit; font-family:inherit;
+  }
+  .route-item .num{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--limestone-dim);
+    width:18px; flex-shrink:0;
+  }
+  .route-item .name{font-size:13px; color:var(--limestone-dim); transition:color .15s;}
+  .route-item:hover .name{color:var(--limestone);}
+  .route-item.active .num{color:var(--brass-light);}
+  .route-item.active .name{color:var(--limestone); font-weight:500;}
+  .route-item:not(:last-child){border-bottom:1px solid var(--line);}
+
+  /* ---- control dock ---- */
+  .dock{
+    position:absolute; right:28px; bottom:28px; z-index:20;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .dock button{
+    width:42px; height:42px; border-radius:2px;
+    border:1px solid var(--line); background:rgba(28,23,18,0.72); backdrop-filter:blur(8px);
+    color:var(--limestone-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:color .15s, border-color .15s;
+  }
+  .dock button:hover{color:var(--brass-light); border-color:rgba(185,138,70,0.5);}
+  .dock button.on{color:var(--brass-light); border-color:var(--brass);}
+  .dock button svg{width:18px; height:18px;}
+
+  /* ---- info drawer ---- */
+  .info-drawer{
+    position:absolute; top:0; right:0; bottom:0; z-index:30;
+    width:340px; max-width:82vw;
+    background:rgba(24,20,15,0.94); backdrop-filter:blur(10px);
+    border-left:1px solid var(--line);
+    padding:80px 28px 28px;
+    transform:translateX(100%); transition:transform .3s ease;
+  }
+  .info-drawer.open{transform:translateX(0);}
+  .info-drawer h2{
+    font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin:0 0 4px; color:var(--limestone);
+  }
+  .info-drawer .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--brass-light); margin:0 0 18px;
+  }
+  .info-drawer p{font-size:14px; line-height:1.7; color:var(--limestone-dim); margin:0 0 16px;}
+  .info-drawer .close{
+    position:absolute; top:24px; right:24px; background:none; border:none;
+    color:var(--limestone-dim); cursor:pointer; font-size:20px; line-height:1;
+  }
+
+  /* ---- pannellum overrides ---- */
+  .pnlm-load-box{background:var(--ink) !important;}
+  .pnlm-load-box p{font-family:'IBM Plex Mono',monospace !important; font-size:11px !important; letter-spacing:1px;}
+  .pnlm-hotspot-base{cursor:pointer;}
+
+  .scene-hotspot{
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(28,23,18,0.75); border:1.5px solid var(--brass-light);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .scene-hotspot:hover{
+    transform:scale(1.18);
+    background:rgba(185,138,70,0.4);
+    border-color:var(--limestone);
+    box-shadow:0 0 0 7px rgba(185,138,70,0.18);
+  }
+  .scene-hotspot svg{width:18px; height:18px; color:var(--brass-light); transition:color .15s ease;}
+  .scene-hotspot:hover svg{color:var(--limestone);}
+  .scene-hotspot .hs-label{
+    position:absolute; top:50%; left:calc(100% + 10px); transform:translateY(-50%);
+    white-space:nowrap; padding:5px 10px; border-radius:2px;
+    background:rgba(20,17,12,0.9); border:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.5px;
+    color:var(--limestone); opacity:0; pointer-events:none;
+    transition:opacity .15s ease;
+  }
+  .scene-hotspot:hover .hs-label{opacity:1;}
+  .info-hotspot{
+    width:26px; height:26px; border-radius:50%;
+    background:var(--brass); border:1.5px solid var(--limestone);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:600; font-size:14px; color:var(--ink);
+  }
+
+  @media (max-width:640px){
+    .prasasti{display:none;}
+    .topbar{padding:16px 18px;}
+    .info-drawer{width:100vw; max-width:100vw;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app-shell">
+
+<div id="panorama"></div>
+
+<div class="topbar">
+  <div class="brandmark">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+      <path d="M15 3 L26 10 V21 L15 27 L4 21 V10 Z" stroke="#B98A46" stroke-width="1.2"/>
+      <path d="M15 3 V27 M4 10 L26 21 M26 10 L4 21" stroke="#B98A46" stroke-width="0.6" opacity="0.6"/>
+    </svg>
+    <div class="brand-text">
+      <h1>Situs Trowulan Digital</h1>
+      <p>Tur Virtual 360°</p>
+    </div>
+  </div>
+  <div class="scene-tag">Lokasi <b id="scene-tag-name">01 / Gapura Utama</b></div>
+</div>
+
+<div class="prasasti" id="prasasti">
+  <p class="prasasti-label" id="prasasti-handle">Rute kunjungan
+    <span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span>
+  </p>
+  <div id="route-list"></div>
+</div>
+
+<div class="dock">
+  <button id="btn-info" title="Informasi lokasi" aria-label="Informasi lokasi">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.6" r="0.9" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button id="btn-rotate" title="Putar otomatis" aria-label="Putar otomatis">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>
+  </button>
+  <button id="btn-fullscreen" title="Layar penuh" aria-label="Layar penuh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3H4v4M16 3h4v4M8 21H4v-4M16 21h4v-4"/></svg>
+  </button>
+</div>
+
+<div class="info-drawer" id="info-drawer">
+  <button class="close" id="info-close" aria-label="Tutup">×</button>
+  <p class="eyebrow" id="info-eyebrow">Titik 01</p>
+  <h2 id="info-title">Gapura Utama</h2>
+  <p id="info-body">Deskripsi lokasi akan tampil di sini. Ganti teks ini dengan narasi sejarah masing-masing titik.</p>
+</div>
+
+</div>
+
+<script src="assets/pannellum/pannellum.js"></script>
+<script>
+/*
+  KONFIGURASI TUR
+  Ganti "panorama" pada setiap scene dengan URL foto 360° (equirectangular) milik Anda.
+  Gambar contoh di bawah ini adalah placeholder dari pustaka Pannellum, hanya untuk demo struktur.
+*/
+const tourData = {
+  default: {
+    firstScene: "gapura",
+    author: "Andi Suandi",
+    sceneFadeDuration: 900,
+    autoLoad: true,
+    compass: true,
+    hotSpotDebug: false
+  },
+  scenes: {
+    gapura: {
+      title: "Gapura Utama",
+      panorama: "https://pannellum.org/images/alma.jpg",
+      hfov: 110,
+      pitch: 0,
+      yaw: 0,
+      hotSpots: [
+        { pitch: -2, yaw: 40, type: "scene", sceneId: "halaman",
+          cssClass: "scene-hotspot", text: "Menuju Halaman Candi",
+          createTooltipFunc: createSceneHotspot, createTooltipArgs: "Halaman Candi" },
+        { pitch: 6, yaw: -60, type: "info", cssClass: "info-hotspot",
+          createTooltipFunc: createInfoHotspot, createTooltipArgs: "gapura" }
+      ]
+    },
+    halaman: {
+      title: "Halaman Candi",
+      panorama: "assets/photos/timothy-unsplash.jpg",/*https://pannellum.org/images/bma-1.jpg*/
+      hfov: 110,
+      pitch: 0,
+      yaw: 0,
+      hotSpots: [
+        { pitch: -3, yaw: 10, type: "scene", sceneId: "gapura",
+          cssClass: "scene-hotspot", text: "Kembali ke Gapura",
+          createTooltipFunc: createSceneHotspot, createTooltipArgs: "Gapura Utama" },
+        { pitch: -1, yaw: 130, type: "scene", sceneId: "puncak",
+          cssClass: "scene-hotspot", text: "Menuju Ruang Utama",
+          createTooltipFunc: createSceneHotspot, createTooltipArgs: "Ruang Utama" },
+        { pitch: 8, yaw: 70, type: "info", cssClass: "info-hotspot",
+          createTooltipFunc: createInfoHotspot, createTooltipArgs: "halaman" }
+      ]
+    },
+    puncak: {
+      title: "Ruang Utama",
+      panorama: "https://pannellum.org/images/cerro-toco-0.jpg",
+      hfov: 110,
+      pitch: 0,
+      yaw: 0,
+      hotSpots: [
+        { pitch: -2, yaw: -100, type: "scene", sceneId: "halaman",
+          cssClass: "scene-hotspot", text: "Kembali ke Halaman Candi",
+          createTooltipFunc: createSceneHotspot, createTooltipArgs: "Halaman Candi" },
+        { pitch: 10, yaw: 30, type: "info", cssClass: "info-hotspot",
+          createTooltipFunc: createInfoHotspot, createTooltipArgs: "puncak" }
+      ]
+    }
+  }
+};
+
+const sceneMeta = {
+  gapura:  { order: "01", label: "Gapura Utama",  desc: "Deskripsi singkat mengenai gapura sebagai titik masuk situs. Ganti dengan narasi sejarah, tahun pembangunan, atau fungsi ruang ini." },
+  halaman: { order: "02", label: "Halaman Candi",  desc: "Deskripsi singkat mengenai halaman utama kompleks. Bisa memuat informasi arsitektur, orientasi bangunan, atau temuan arkeologis." },
+  puncak:  { order: "03", label: "Ruang Utama",    desc: "Deskripsi singkat mengenai ruang utama atau bilik candi. Cocok untuk menjelaskan relief, arca, atau makna ritual ruang tersebut." }
+};
+
+function createSceneHotspot(hotSpotDiv, args){
+  hotSpotDiv.classList.add("scene-hotspot");
+  hotSpotDiv.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="hs-label">' + args + '</span>';
+}
+function createInfoHotspot(hotSpotDiv, args){
+  hotSpotDiv.classList.add("info-hotspot");
+  hotSpotDiv.innerHTML = "i";
+  hotSpotDiv.addEventListener("click", (e) => { e.stopPropagation(); openInfo(args); });
+}
+
+const viewer = pannellum.viewer("panorama", tourData);
+
+function updateChrome(sceneId){
+  const meta = sceneMeta[sceneId];
+  if(!meta) return;
+  document.getElementById("scene-tag-name").textContent = meta.order + " / " + meta.label;
+  document.querySelectorAll(".route-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.scene === sceneId);
+  });
+}
+
+function openInfo(sceneId){
+  const meta = sceneMeta[sceneId];
+  document.getElementById("info-eyebrow").textContent = "Titik " + meta.order;
+  document.getElementById("info-title").textContent = meta.label;
+  document.getElementById("info-body").textContent = meta.desc;
+  document.getElementById("info-drawer").classList.add("open");
+}
+
+viewer.on("scenechange", updateChrome);
+updateChrome(tourData.default.firstScene);
+
+const routeList = document.getElementById("route-list");
+Object.keys(sceneMeta).forEach(id => {
+  const meta = sceneMeta[id];
+  const btn = document.createElement("button");
+  btn.className = "route-item" + (id === tourData.default.firstScene ? " active" : "");
+  btn.dataset.scene = id;
+  btn.innerHTML = '<span class="num">' + meta.order + '</span><span class="name">' + meta.label + '</span>';
+  btn.addEventListener("click", () => viewer.loadScene(id));
+  routeList.appendChild(btn);
+});
+
+document.getElementById("btn-info").addEventListener("click", () => {
+  openInfo(viewer.getScene());
+});
+document.getElementById("info-close").addEventListener("click", () => {
+  document.getElementById("info-drawer").classList.remove("open");
+});
+
+let rotating = false;
+const rotateBtn = document.getElementById("btn-rotate");
+rotateBtn.addEventListener("click", () => {
+  rotating = !rotating;
+  rotateBtn.classList.toggle("on", rotating);
+  if(rotating){
+    viewer.startAutoRotate(-5);
+  } else {
+    viewer.stopAutoRotate();
+  }
+});
+
+const appShell = document.getElementById("app-shell");
+document.getElementById("btn-fullscreen").addEventListener("click", () => {
+  if(!document.fullscreenElement){
+    appShell.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  document.getElementById("btn-fullscreen").classList.toggle("on", !!document.fullscreenElement);
+  setTimeout(() => viewer.resize && viewer.resize(), 50);
+});
+
+/* ---- draggable route panel ---- */
+(function(){
+  const panel = document.getElementById("prasasti");
+  const handle = document.getElementById("prasasti-handle");
+  let offsetX = 0, offsetY = 0, dragging = false;
+
+  handle.addEventListener("pointerdown", (e) => {
+    const rect = panel.getBoundingClientRect();
+    panel.style.left = rect.left + "px";
+    panel.style.top = rect.top + "px";
+    panel.style.transform = "none";
+    panel.classList.add("dragging");
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    dragging = true;
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  handle.addEventListener("pointermove", (e) => {
+    if(!dragging) return;
+    const shellRect = appShell.getBoundingClientRect();
+    let x = e.clientX - offsetX;
+    let y = e.clientY - offsetY;
+    const maxX = shellRect.width - panel.offsetWidth - 4;
+    const maxY = shellRect.height - panel.offsetHeight - 4;
+    x = Math.min(Math.max(x, 4), Math.max(maxX, 4));
+    y = Math.min(Math.max(y, 4), Math.max(maxY, 4));
+    panel.style.left = x + "px";
+    panel.style.top = y + "px";
+  });
+
+  function stopDrag(e){
+    if(!dragging) return;
+    dragging = false;
+    panel.classList.remove("dragging");
+    try{ handle.releasePointerCapture(e.pointerId); }catch(err){}
+  }
+  handle.addEventListener("pointerup", stopDrag);
+  handle.addEventListener("pointercancel", stopDrag);
+})();
+</script>
+</body>
+</html>
