@@ -70,6 +70,48 @@
   // Initialize viewer.
   var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
 
+ // Gyroscope :  2. PASTE KODE TAHAP 3 TEPAT DI SINI (DI BAWAH VARIABEL VIEWER):
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Tombol izin khusus iOS 13+
+    var gyroButton = document.createElement('button');
+    gyroButton.textContent = 'Aktifkan Sensor Rotasi';
+    gyroButton.style.position = 'absolute';
+    gyroButton.style.zIndex = '9999';
+    gyroButton.style.bottom = '20px'; // Dipindah ke bawah agar tidak menutupi menu atas
+    gyroButton.style.left = '50%';
+    gyroButton.style.transform = 'translateX(-50%)';
+    gyroButton.style.padding = '10px 20px';
+    gyroButton.style.background = '#007AFF';
+    gyroButton.style.color = '#fff';
+    gyroButton.style.border = 'none';
+    gyroButton.style.borderRadius = '5px';
+    document.body.appendChild(gyroButton);
+
+    gyroButton.addEventListener('click', function() {
+      DeviceOrientationEvent.requestPermission()
+        .then(function(response) {
+          if (response === 'granted') {
+            enableGyro();
+            gyroButton.remove();
+          }
+        })
+        .catch(console.error);
+    });
+  } else {
+    // Untuk Android atau browser non-iOS langsung aktif
+    enableGyro();
+  }
+
+  function enableGyro() {
+    var controls = viewer.controls();
+    var method = new DeviceOrientationControlMethod();
+    controls.registerMethod('deviceOrientation', method);
+    controls.enableMethod('deviceOrientation');
+  }
+  // -----------------------------------------------------------
+
+
+
   // Create scenes.
   var scenes = data.scenes.map(function(data) {
     var urlPrefix = "tiles";
