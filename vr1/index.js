@@ -98,9 +98,19 @@ document.body.appendChild(gyroButton);
 gyroButton.addEventListener('click', function() {
   if (isGyroActive) {
     // JIKA AKTIF -> MATIKAN GYRO
+        // Kembalikan tampilan tombol menjadi mode "Aktifkan" (Warna Biru)
+    isGyroActive = false;
+    gyroButton.textContent = 'Aktifkan Gyro';
+    gyroButton.style.background = '#007AFF';
+
     disableGyro();
   } else {
     // JIKA MATI -> AKTIFKAN GYRO
+        // Ubah tampilan tombol menjadi mode "Matikan" (Warna Merah)
+    isGyroActive = true;
+    gyroButton.textContent = 'Matikan Gyro';
+    gyroButton.style.background = '#FF3B30'; 
+
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
       // Protokol izin khusus iOS
       DeviceOrientationEvent.requestPermission()
@@ -131,10 +141,6 @@ function enableGyro() {
   controls.registerMethod('deviceOrientation', gyroMethod);
   controls.enableMethod('deviceOrientation');
   
-  // Ubah tampilan tombol menjadi mode "Matikan" (Warna Merah)
-  isGyroActive = true;
-  gyroButton.textContent = 'Matikan Sensor Rotasi (Gyro)';
-  gyroButton.style.background = '#FF3B30'; 
 }
 
 // Fungsi untuk Mematikan Gyro
@@ -145,10 +151,6 @@ function disableGyro() {
   controls.disableMethod('deviceOrientation');
   controls.unregisterMethod('deviceOrientation');
   
-  // Kembalikan tampilan tombol menjadi mode "Aktifkan" (Warna Biru)
-  isGyroActive = false;
-  gyroButton.textContent = 'Aktifkan Sensor Rotasi (Gyro)';
-  gyroButton.style.background = '#007AFF';
 }
 
 /*  Berhasil, tombol gyro muncul. setelah diklik hilang.
