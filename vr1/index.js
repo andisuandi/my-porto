@@ -71,6 +71,87 @@
   var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
 
  // Gyroscope :  2. PASTE KODE TAHAP 3 TEPAT DI SINI (DI BAWAH VARIABEL VIEWER):
+
+// 1. Inisialisasi variabel status gyro di luar agar bisa diakses bolak-balik
+var isGyroActive = false;
+var gyroMethod = null;
+
+// 2. Buat tombol toggle
+var gyroButton = document.createElement('button');
+gyroButton.textContent = 'Aktifkan Sensor Rotasi (Gyro)';
+gyroButton.style.position = 'absolute';
+gyroButton.style.zIndex = '9999';
+gyroButton.style.bottom = '20px';
+gyroButton.style.left = '20%';
+gyroButton.style.transform = 'translateX(-50%)';
+gyroButton.style.padding = '12px 24px';
+gyroButton.style.background = '#007AFF'; // Warna biru awal
+gyroButton.style.color = '#fff';
+gyroButton.style.border = 'none';
+gyroButton.style.borderRadius = '30px';
+gyroButton.style.fontWeight = 'bold';
+gyroButton.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+gyroButton.style.transition = 'background 0.3s ease'; // Efek transisi warna halus
+document.body.appendChild(gyroButton);
+
+// 3. Logika klik tombol untuk On/Off
+gyroButton.addEventListener('click', function() {
+  if (isGyroActive) {
+    // JIKA AKTIF -> MATIKAN GYRO
+    disableGyro();
+  } else {
+    // JIKA MATI -> AKTIFKAN GYRO
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // Protokol izin khusus iOS
+      DeviceOrientationEvent.requestPermission()
+        .then(function(response) {
+          if (response === 'granted') {
+            enableGyro();
+          } else {
+            alert('Izin sensor ditolak oleh pengguna.');
+          }
+        })
+        .catch(console.error);
+    } else {
+      // Langsung aktif untuk Android
+      enableGyro();
+    }
+  }
+});
+
+// Fungsi untuk Menyalakan Gyro
+function enableGyro() {
+  var controls = viewer.controls();
+  
+  // Buat instance method baru jika belum ada
+  if (!gyroMethod) {
+    gyroMethod = new DeviceOrientationControlMethod();
+  }
+  
+  controls.registerMethod('deviceOrientation', gyroMethod);
+  controls.enableMethod('deviceOrientation');
+  
+  // Ubah tampilan tombol menjadi mode "Matikan" (Warna Merah)
+  isGyroActive = true;
+  gyroButton.textContent = 'Matikan Sensor Rotasi (Gyro)';
+  gyroButton.style.background = '#FF3B30'; 
+}
+
+// Fungsi untuk Mematikan Gyro
+function disableGyro() {
+  var controls = viewer.controls();
+  
+  // Nonaktifkan dan hapus metode kontrol gyro dari Marzipano
+  controls.disableMethod('deviceOrientation');
+  controls.unregisterMethod('deviceOrientation');
+  
+  // Kembalikan tampilan tombol menjadi mode "Aktifkan" (Warna Biru)
+  isGyroActive = false;
+  gyroButton.textContent = 'Aktifkan Sensor Rotasi (Gyro)';
+  gyroButton.style.background = '#007AFF';
+}
+
+/*  Berhasil, tombol gyro muncul. setelah diklik hilang.
  // Memaksa pembuatan tombol aktivasi demi keamanan privasi browser modern (Android & iOS)
 var gyroButton = document.createElement('button');
 gyroButton.textContent = 'Aktifkan Sensor Rotasi (Gyro)';
