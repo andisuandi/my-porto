@@ -78,7 +78,7 @@ var gyroMethod = null;
 
 // 2. Buat tombol toggle
 var gyroButton = document.createElement('button');
-gyroButton.textContent = 'Aktifkan Sensor Rotasi (Gyro)';
+gyroButton.textContent = 'Aktifkan Gyro';
 gyroButton.style.position = 'absolute';
 gyroButton.style.zIndex = '9999';
 gyroButton.style.bottom = '20px';
@@ -227,7 +227,6 @@ function enableGyro() {
     // Untuk Android atau browser non-iOS langsung aktif
     enableGyro();
   }
-*/
   function enableGyro() {
     var controls = viewer.controls();
     var method = new DeviceOrientationControlMethod();
@@ -236,6 +235,7 @@ function enableGyro() {
   }
   // -----------------------------------------------------------
 
+*/
 
 
   // Create scenes.
