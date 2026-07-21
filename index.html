@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tur Virtual — Situs Warisan</title>
-<link rel="stylesheet" href="assets/pannellum/pannellum.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -169,10 +169,12 @@
   }
 
   @media (max-width:640px){
-    .prasasti{display:none;}
+    .prasasti{width:min(78vw, 260px);}
     .topbar{padding:16px 18px;}
     .info-drawer{width:100vw; max-width:100vw;}
   }
+  .prasasti.prasasti-closed{display:none;}
+  #btn-route.on{color:var(--brass-light); border-color:var(--brass);}
 </style>
 </head>
 <body>
@@ -203,6 +205,9 @@
 </div>
 
 <div class="dock">
+  <button id="btn-route" title="Daftar rute" aria-label="Daftar rute">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
+  </button>
   <button id="btn-info" title="Informasi lokasi" aria-label="Informasi lokasi">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.6" r="0.9" fill="currentColor" stroke="none"/></svg>
   </button>
@@ -223,7 +228,7 @@
 
 </div>
 
-<script src="assets/pannellum/pannellum.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.js"></script>
 <script>
 /*
   KONFIGURASI TUR
@@ -233,7 +238,7 @@
 const tourData = {
   default: {
     firstScene: "gapura",
-    author: "Andi Suandi",
+    author: "Contoh Tur Virtual",
     sceneFadeDuration: 900,
     autoLoad: true,
     compass: true,
@@ -256,7 +261,7 @@ const tourData = {
     },
     halaman: {
       title: "Halaman Candi",
-      panorama: "assets/photos/timothy-unsplash.jpg",/*https://pannellum.org/images/bma-1.jpg*/
+      panorama: "https://pannellum.org/images/bma-1.jpg",
       hfov: 110,
       pitch: 0,
       yaw: 0,
@@ -368,6 +373,23 @@ document.addEventListener("fullscreenchange", () => {
   document.getElementById("btn-fullscreen").classList.toggle("on", !!document.fullscreenElement);
   setTimeout(() => viewer.resize && viewer.resize(), 50);
 });
+
+/* ---- route panel toggle (works on mobile & fullscreen too) ---- */
+(function(){
+  const panel = document.getElementById("prasasti");
+  const btn = document.getElementById("btn-route");
+  const isNarrow = window.matchMedia("(max-width:640px)").matches;
+
+  function setOpen(open){
+    panel.classList.toggle("prasasti-closed", !open);
+    btn.classList.toggle("on", open);
+  }
+  setOpen(!isNarrow);
+
+  btn.addEventListener("click", () => {
+    setOpen(panel.classList.contains("prasasti-closed"));
+  });
+})();
 
 /* ---- draggable route panel ---- */
 (function(){
