@@ -71,7 +71,50 @@
   var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
 
  // Gyroscope :  2. PASTE KODE TAHAP 3 TEPAT DI SINI (DI BAWAH VARIABEL VIEWER):
+ // Memaksa pembuatan tombol aktivasi demi keamanan privasi browser modern (Android & iOS)
+var gyroButton = document.createElement('button');
+gyroButton.textContent = 'Aktifkan Sensor Rotasi (Gyro)';
+gyroButton.style.position = 'absolute';
+gyroButton.style.zIndex = '9999';
+gyroButton.style.bottom = '20px';
+gyroButton.style.left = '50%';
+gyroButton.style.transform = 'translateX(-50%)';
+gyroButton.style.padding = '12px 24px';
+gyroButton.style.background = '#007AFF';
+gyroButton.style.color = '#fff';
+gyroButton.style.border = 'none';
+gyroButton.style.borderRadius = '30px';
+gyroButton.style.fontWeight = 'bold';
+gyroButton.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+document.body.appendChild(gyroButton);
+
+gyroButton.addEventListener('click', function() {
+  // Cek jika browser adalah iOS yang butuh izin khusus
   if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(function(response) {
+        if (response === 'granted') {
+          enableGyro();
+          gyroButton.remove();
+        } else {
+          alert('Izin sensor ditolak oleh pengguna.');
+        }
+      })
+      .catch(console.error);
+  } else {
+    // Untuk Android dan browser lainnya langsung aktifkan setelah diklik
+    enableGyro();
+    gyroButton.remove();
+  }
+});
+
+function enableGyro() {
+  var controls = viewer.controls();
+  var method = new DeviceOrientationControlMethod();
+  controls.registerMethod('deviceOrientation', method);
+  controls.enableMethod('deviceOrientation');
+}
+/*  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
     // Tombol izin khusus iOS 13+
     var gyroButton = document.createElement('button');
     gyroButton.textContent = 'Aktifkan Sensor Rotasi';
@@ -101,7 +144,7 @@
     // Untuk Android atau browser non-iOS langsung aktif
     enableGyro();
   }
-
+*/
   function enableGyro() {
     var controls = viewer.controls();
     var method = new DeviceOrientationControlMethod();
